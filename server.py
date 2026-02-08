@@ -1,21 +1,36 @@
-# Version 2.0 - Live on Render
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import google.generativeai as genai
 import os
-import uvicorn
-from fastapi import FastAPI
 
 app = FastAPI()
 
+# 👇 PASTE YOUR KEY HERE (Keep the quotes!)
+GEMINI_KEY = "AIzaSyBBpChPX5Vz8c3PkmG6Oy873rxPNzAdaIg"
+
+# Configure the Brain
+genai.configure(api_key=GEMINI_KEY)
+model = genai.GenerativeModel('gemini-1.5-flash')
+
+class Thought(BaseModel):
+    prompt: str
+
 @app.get("/")
 def read_root():
-    return {"status": "Neural Link Established"}
+    return {"status": "Neural Link Active", "mode": "Oracle"}
 
-@app.get("/activate")
-def activate_brain():
-    print("🔴 SIGNAL RECEIVED: Activating Neural Network...")
-    return {"message": "Command Executed", "power": 100}
-
-if __name__ == "__main__":
-    # 👇 This checks if Render gave us a port. 
-    # If yes, use it. If no (local laptop), use 8000.
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+@app.post("/ask")
+async def ask_brain(thought: Thought):
+    try:
+        print(f"Thinking about: {thought.prompt}")
+        
+        # Ask Gemini
+        response = model.generate_content(thought.prompt)
+        
+        return {
+            "answer": response.text,
+            "power_usage": "Low"
+        }
+    except Exception as e:
+        print(f"Brain Freeze: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

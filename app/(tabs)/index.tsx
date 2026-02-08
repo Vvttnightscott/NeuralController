@@ -2,25 +2,34 @@ import { useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function HomeScreen() {
-// 👇 YOUR PERMANENT CLOUD URL (No more ngrok!)
-const API_URL = 'https://brain-api-1ezi.onrender.com';
-// (Make sure to use YOUR actual URL from the Render dashboard); 
-  
+  // 👇 YOUR PERMANENT CLOUD URL
+  const API_URL = 'https://brain-api-1ezi.onrender.com';
+
   const [status, setStatus] = useState('READY');
 
   const sendSignal = async () => {
     setStatus('SENDING...');
+    console.log(`Attempting to hit: ${API_URL}/activate`); // Debug log
+
     try {
+      // 👇 use backticks ` ` here, not single quotes ' '
       const response = await fetch(`${API_URL}/activate`);
+
+      // 1. Check if the Server is happy (Status 200-299)
+      if (!response.ok) {
+        throw new Error(`Server Error: ${response.status}`);
+      }
+
+      // 2. Only parse JSON if the server is happy
       const data = await response.json();
       
-      // If success:
       setStatus('RECEIVED!');
-      Alert.alert('Brain Response', data.message); // Should say "Command Executed"
-      
-    } catch (error) {
+      Alert.alert('Brain Response', JSON.stringify(data)); // Show exact response
+
+    } catch (error: any) {
       setStatus('ERROR');
-      Alert.alert('Connection Failed', 'Could not find the Brain. Check IP or Firewall.');
+      // 👇 This will now tell us exactly WHAT went wrong
+      Alert.alert('Failure', error.message);
       console.error(error);
     }
   };
