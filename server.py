@@ -1,10 +1,7 @@
-from fastapi import FastAPI
+# Version 2.0 - Live on Render
+import os
 import uvicorn
-from pyngrok import ngrok
-import nest_asyncio
-
-# Fix loop issues
-nest_asyncio.apply()
+from fastapi import FastAPI
 
 app = FastAPI()
 
@@ -18,15 +15,7 @@ def activate_brain():
     return {"message": "Command Executed", "power": 100}
 
 if __name__ == "__main__":
-    # Kill old tunnels
-    ngrok.kill()
-    
-    # Create a NEW tunnel
-    tunnel = ngrok.connect(8005)
-    public_url = tunnel.public_url
-    
-    # Print the URL so you can copy it
-    print(f"\n🚀 COPY THIS URL: {public_url}\n")
-    
-    # Start the server
-    uvicorn.run(app, port=8005)
+    # 👇 This checks if Render gave us a port. 
+    # If yes, use it. If no (local laptop), use 8000.
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
