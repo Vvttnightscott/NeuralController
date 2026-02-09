@@ -1,36 +1,39 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel
-import google.generativeai as genai
+from openai import OpenAI
 import os
 
 app = FastAPI()
 
-# 👇 PASTE YOUR KEY HERE (Keep the quotes!)
-GEMINI_KEY = "AIzaSyBBpChPX5Vz8c3PkmG6Oy873rxPNzAdaIg"
-
-# Configure the Brain
-genai.configure(api_key=GEMINI_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
+# 1. Initialize the OpenAI Brain
+# It automatically looks for "OPENAI_API_KEY" in the environment
+client = OpenAI()
 
 class Thought(BaseModel):
     prompt: str
 
 @app.get("/")
 def read_root():
-    return {"status": "Neural Link Active", "mode": "Oracle"}
+    return {"status": "Neural Link Active", "mode": "OpenAI GPT-4o-Mini"}
 
 @app.post("/ask")
-async def ask_brain(thought: Thought):
+def ask_brain(thought: Thought):
     try:
-        print(f"Thinking about: {thought.prompt}")
+        # 2. Ask ChatGPT
+        # gpt-4o-mini is the new standard: Fast, Cheap, Smart.
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful AI assistant for a Unity game."},
+                {"role": "user", "content": thought.prompt}
+            ]
+        )
         
-        # Ask Gemini
-        response = model.generate_content(thought.prompt)
-        
-        return {
-            "answer": response.text,
-            "power_usage": "Low"
-        }
+        # 3. Extract Answer
+        answer_text = completion.choices[0].message.content
+        return {"answer": answer_text}
+
     except Exception as e:
-        print(f"Brain Freeze: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # If your credit card fails or key is wrong, this tells us why
+        return {"answer": f"Brain Freeze: {str(e)}"}
+
